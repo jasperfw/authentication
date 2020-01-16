@@ -1,0 +1,29 @@
+{
+  "name": "wigedev/jasper-auth",
+  "description": "A PHP Authentication library built on JASPER FARM",
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "William Eldridge",
+      "homepage": "http://wigedev.net"
+    }
+  ],
+  "require": {
+    "php": ">=7.2",
+    "psr/log": "1.0.*",
+    "wigedev/jasper-farm": "dev-master"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "~8.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "WigeDev\\JasperAuth\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "WigeDev\\JasperTest\\": "tests/"
+    }
+  }
+}
