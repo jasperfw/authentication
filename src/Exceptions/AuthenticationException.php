@@ -1,6 +1,6 @@
 <?php
 
-namespace WigeDev\JasperAuth\Exceptions;
+namespace JasperFW\JasperAuth\Exceptions;
 
 use Exception;
 

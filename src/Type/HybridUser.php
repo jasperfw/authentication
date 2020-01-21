@@ -1,6 +1,6 @@
 <?php
 
-namespace WigeDev\JasperAuth\Type;
+namespace JasperFW\JasperAuth\Type;
 
 class HybridUser
 {

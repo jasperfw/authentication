@@ -1,19 +1,18 @@
 <?php
 
-namespace WigeDev\JasperAuth\Type;
+namespace JasperFW\JasperAuth\Type;
 
-use WigeDev\JasperAuth\Exceptions\AccountLockoutException;
-use WigeDev\JasperAuth\Exceptions\AuthenticationException;
-use WigeDev\JasperAuth\User;
-use WigeDev\JasperFarm\DataAccess\DAO;
-use WigeDev\JasperFarm\DataAccess\LDAP;
+use JasperFW\JasperAuth\Exceptions\AccountLockoutException;
+use JasperFW\JasperAuth\Exceptions\AuthenticationException;
+use JasperFW\JasperAuth\User;
+use JasperFW\JasperFarm\DataAccess\DAO;
 
 /**
  * Class LDAPUser
  *
  * Authentication for applications that use LDAP to authenticate users.
  *
- * @package WigeDev\JasperAuth\Type
+ * @package JasperFW\JasperAuth\Type
  */
 class LDAPUser extends User
 {

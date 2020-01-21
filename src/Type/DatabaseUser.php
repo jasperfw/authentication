@@ -1,11 +1,10 @@
 <?php
 
-namespace WigeDev\JasperAuth\Type;
+namespace JasperFW\JasperAuth\Type;
 
-use WigeDev\JasperAuth\Exceptions\AccountLockoutException;
-use WigeDev\JasperAuth\Exceptions\AuthenticationException;
-use WigeDev\JasperAuth\User;
-use WigeDev\JasperFarm\DataAccess\DAO;
+use JasperFW\JasperAuth\Exceptions\AuthenticationException;
+use JasperFW\JasperAuth\User;
+use JasperFW\JasperFarm\DataAccess\DAO;
 
 /**
  * Class DatabaseUser
@@ -14,7 +13,7 @@ use WigeDev\JasperFarm\DataAccess\DAO;
  * provide the database connection capabilities. This class uses PHP's built in password hashing functionality for
  * security of the password data.
  *
- * @package WigeDev\JasperAuth\Type
+ * @package JasperFW\JasperAuth\Type
  */
 class DatabaseUser extends User
 {

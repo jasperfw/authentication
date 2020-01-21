@@ -1,11 +1,11 @@
 <?php
 
-namespace WigeDev\JasperAuth;
+namespace JasperFW\JasperAuth;
 
 use Exception;
-use WigeDev\JasperAuth\Exceptions\AccountLockoutException;
-use WigeDev\JasperAuth\Exceptions\AuthenticationException;
-use WigeDev\JasperFarm\DataAccess\DAO;
+use JasperFW\JasperAuth\Exceptions\AccountLockoutException;
+use JasperFW\JasperAuth\Exceptions\AuthenticationException;
+use JasperFW\JasperFarm\DataAccess\DAO;
 
 /**
  * Class User
@@ -13,7 +13,7 @@ use WigeDev\JasperFarm\DataAccess\DAO;
  * The abstract user class represents a single user. This class can be extended by an appropriate user type class such
  * as LDAPUser or DatabaseUser, depending on the source the user credentials will be authenticated against.
  *
- * @package WigeDev\JasperAuth
+ * @package JasperFW\JasperAuth
  */
 abstract class User
 {
