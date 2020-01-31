@@ -1,6 +1,6 @@
 {
-  "name": "jasperfw/jasper-auth",
-  "description": "A PHP Authentication library built on JASPER FARM",
+  "name": "jasperfw/authentication",
+  "description": "A PHP Authentication library built on JASPER FW Data Interface Library",
   "license": "Apache-2.0",
   "authors": [
     {
@@ -11,19 +11,19 @@
   "require": {
     "php": ">=7.2",
     "psr/log": "1.0.*",
-    "jasperfw/jasper-farm": "dev-master"
+    "jasperfw/data-interface": "dev-master"
   },
   "require-dev": {
     "phpunit/phpunit": "~8.0"
   },
   "autoload": {
     "psr-4": {
-      "JasperFW\\JasperAuth\\": "src/"
+      "JasperFW\\Authentication\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "JasperFW\\JasperTest\\": "tests/"
+      "JasperFW\\AuthenticationTest\\": "tests/"
     }
   }
 }

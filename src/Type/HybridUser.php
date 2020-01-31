@@ -1,6 +1,6 @@
 <?php
 
-namespace JasperFW\JasperAuth\Type;
+namespace JasperFW\Authentication\Type;
 
 class HybridUser
 {

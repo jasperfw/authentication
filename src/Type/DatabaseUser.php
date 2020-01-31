@@ -1,10 +1,10 @@
 <?php
 
-namespace JasperFW\JasperAuth\Type;
+namespace JasperFW\Authentication\Type;
 
-use JasperFW\JasperAuth\Exceptions\AuthenticationException;
-use JasperFW\JasperAuth\User;
-use JasperFW\JasperFarm\DataAccess\DAO;
+use JasperFW\Authentication\Exceptions\AuthenticationException;
+use JasperFW\Authentication\User;
+use JasperFW\DataInterface\DataAccess\DAO;
 
 /**
  * Class DatabaseUser
@@ -13,21 +13,18 @@ use JasperFW\JasperFarm\DataAccess\DAO;
  * provide the database connection capabilities. This class uses PHP's built in password hashing functionality for
  * security of the password data.
  *
- * @package JasperFW\JasperAuth\Type
+ * @package JasperFW\Authentication\Type
  */
 class DatabaseUser extends User
 {
-    protected static $auth_conn = '';
-    protected static $authentication_table = '';
-    protected static $userid_column = '';
-    protected static $username_column = '';
-    protected static $password_column = '';
-    protected static $email_column = '';
-    protected static $expiration_column = '';
-    protected static $reset_token_column = '';
-    protected static $reset_token_expiration_column = '';
-
-    protected static $dbc;
+    protected static $authenticationTable = '';
+    protected static $userIDColumn = '';
+    protected static $usernameColumn = '';
+    protected static $passwordColumn = '';
+    protected static $emailColumn = '';
+    protected static $expirationColumn = '';
+    protected static $resetTokenColumn = '';
+    protected static $resetTokenExpirationColumn = '';
 
     /**
      * @param string $username The username being authenticated
@@ -37,7 +34,7 @@ class DatabaseUser extends User
      * @return bool True if the user successfully authenticates
      * @throws AuthenticationException
      */
-    public function authenticate(string $username, string $password, DAO $dbc = null): bool
+    public function authenticate(DAO $dbc, string $username, string $password): bool
     {
         // Get the password hash from the database
         $info = $this->getUserRecord($dbc, $username);
@@ -64,19 +61,21 @@ class DatabaseUser extends User
      * Use a pseudorandom password token to authenticate instead of a password. This is useful for a forgot password or
      * initial user signup functionality.
      *
-     * @param DAO    $dbc The database connection
+     * @param DAO    $dbc      The database connection
      * @param string $token    The token to authenticate against
      * @param string $username The username being authenticated
      *
      * @return bool True if the user is authenticated
+     * @throws AuthenticationException
+     * @noinspection SqlNoDataSourceInspection
      */
     public function authenticateWithToken(DAO $dbc, string $token, string $username): bool
     {
-        $authentication_table = static::$authentication_table;
-        $userid_column = static::$userid_column;
-        $username_column = static::$username_column;
-        $reset_token_column = static::$reset_token_column;
-        $reset_token_expiration_column = static::$reset_token_expiration_column;
+        $authentication_table = static::$authenticationTable;
+        $userid_column = static::$userIDColumn;
+        $username_column = static::$usernameColumn;
+        $reset_token_column = static::$resetTokenColumn;
+        $reset_token_expiration_column = static::$resetTokenExpirationColumn;
         $params = array(':token' => $token);
         $username_sql = '';
         if (false !== $username) {
@@ -101,7 +100,7 @@ SQL;
         $this->userid = $result['userid'];
         $this->username = $result['username'];
         $this->levelCode = static::USER;
-        $this->is_expired = true;
+        $this->isExpired = true;
         $this->populateUserInfo($dbc);
         return true;
     }
@@ -116,17 +115,18 @@ SQL;
      * @param bool   $disable_login True to disable the password - after this, login will only be possible with the token
      *
      * @return string|null
+     * @noinspection SqlNoDataSourceInspection
      */
     public static function setResetToken(DAO $dbc, string $email_address, string $username, int $token_lifespan_minutes = 180, bool $disable_login = false): ?string
     {
-        $authentication_table = static::$authentication_table;
-        $userid_column = static::$userid_column;
-        $username_column = static::$username_column;
-        $password_column = static::$password_column;
-        $expiration_column = static::$expiration_column;
-        $email_column = static::$email_column;
-        $reset_token_column = static::$reset_token_column;
-        $reset_token_expiration_column = static::$reset_token_expiration_column;
+        $authentication_table = static::$authenticationTable;
+        $userid_column = static::$userIDColumn;
+        $username_column = static::$usernameColumn;
+        $password_column = static::$passwordColumn;
+        $expiration_column = static::$expirationColumn;
+        $email_column = static::$emailColumn;
+        $reset_token_column = static::$resetTokenColumn;
+        $reset_token_expiration_column = static::$resetTokenExpirationColumn;
         $params = array(':email' => $email_address);
         $username_sql = '';
         if ($username !== false) {
@@ -169,11 +169,12 @@ SQL;
      * @param string $token The token to check
      *
      * @return bool True if the token is not already in use
+     * @noinspection SqlNoDataSourceInspection
      */
     protected static function isTokenUnique(DAO $dbc, string $token): bool
     {
-        $authentication_table = static::$authentication_table;
-        $reset_token_column = static::$reset_token_column;
+        $authentication_table = static::$authenticationTable;
+        $reset_token_column = static::$resetTokenColumn;
         $query = "SELECT COUNT(*) thenum FROM {$authentication_table} WHERE {$reset_token_column} = :token";
         $result = $dbc->query($query, ['params' => [':token' => $token]])->toArray();
         if (count($result) > 0 && $result[0]['thenum'] < 1) return true;
@@ -182,12 +183,14 @@ SQL;
 
     /**
      * Saves a new password for the user.
+     *
      * @param DAO $dbc The database connection
      * @param string $new_password The new password to be set
+     *
      * @return bool True if the password change is successful
      * @throws AuthenticationException
      * @throws \Exception
-     */
+     * @noinspection SqlNoDataSourceInspection*/
     public function updatePassword(DAO $dbc, string $new_password): bool
     {
         // Check that the password does not match the current password
@@ -204,19 +207,19 @@ SQL;
             throw new AuthenticationException('The entered password does not match the complexity requirements');
         }
         // Set the params
-        $authentication_table = static::$authentication_table;
-        $password_column = static::$password_column;
-        $expiration_column = static::$expiration_column;
-        $userid_column = static::$userid_column;
-        $reset_token_column = static::$reset_token_column;
-        $reset_token_expiration_column = static::$reset_token_expiration_column;
+        $authentication_table = static::$authenticationTable;
+        $password_column = static::$passwordColumn;
+        $expiration_column = static::$expirationColumn;
+        $userid_column = static::$userIDColumn;
+        $reset_token_column = static::$resetTokenColumn;
+        $reset_token_expiration_column = static::$resetTokenExpirationColumn;
         $hash = $this->hashPassword($new_password);
         $params = array(':pass' => $hash, ':user' => $this->userid);
         // If a max age for the password has been specified, set the expiration
         $expiration_sql = '';
-        if (null !== static::$password_max_age) {
+        if (null !== static::$passwordMaxAge) {
             $expiration_sql = "{$expiration_column} = :exp,";
-            $params[':exp'] = date('Y-m-d H:i:s', strtotime('+' . static::$password_max_age . ' days'));
+            $params[':exp'] = date('Y-m-d H:i:s', strtotime('+' . static::$passwordMaxAge . ' days'));
         }
         // Save the password
         $sql = <<<SQL
@@ -246,15 +249,16 @@ SQL;
      *
      * @param DAO $dbc
      * @param $username
+     *
      * @return string
-     */
+     * @noinspection SqlNoDataSourceInspection*/
     protected function getUserRecord(DAO $dbc, string $username): string
     {
-        $authentication_table = static::$authentication_table;
-        $password_column = static::$password_column;
-        $expiration_column = static::$expiration_column;
-        $username_column = static::$username_column;
-        $userid_column = static::$userid_column;
+        $authentication_table = static::$authenticationTable;
+        $password_column = static::$passwordColumn;
+        $expiration_column = static::$expirationColumn;
+        $username_column = static::$usernameColumn;
+        $userid_column = static::$userIDColumn;
 
         $sql = <<<MSSQL
 SELECT {$userid_column} userid,
@@ -309,7 +313,7 @@ MSSQL;
      */
     protected function badPassword(string $message = 'The username or password provided were not valid.'): void
     {
-        $this->login_attempts ++;
+        $this->loginAttempts ++;
         throw new AuthenticationException($message);
     }
 }

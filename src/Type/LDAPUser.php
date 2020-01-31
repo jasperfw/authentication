@@ -1,18 +1,19 @@
 <?php
 
-namespace JasperFW\JasperAuth\Type;
+namespace JasperFW\Authentication\Type;
 
-use JasperFW\JasperAuth\Exceptions\AccountLockoutException;
-use JasperFW\JasperAuth\Exceptions\AuthenticationException;
-use JasperFW\JasperAuth\User;
-use JasperFW\JasperFarm\DataAccess\DAO;
+use Exception;
+use JasperFW\Authentication\Exceptions\AccountLockoutException;
+use JasperFW\Authentication\Exceptions\AuthenticationException;
+use JasperFW\Authentication\User;
+use JasperFW\DataInterface\DataAccess\DAO;
 
 /**
  * Class LDAPUser
  *
  * Authentication for applications that use LDAP to authenticate users.
  *
- * @package JasperFW\JasperAuth\Type
+ * @package JasperFW\Authentication\Type
  */
 class LDAPUser extends User
 {
@@ -24,6 +25,7 @@ class LDAPUser extends User
      * @return bool
      * @throws AccountLockoutException
      * @throws AuthenticationException
+     * @noinspection PhpComposerExtensionStubsInspection
      */
     public function authenticate(DAO $dbc, string $username, string $password): bool
     {
@@ -38,13 +40,13 @@ class LDAPUser extends User
                 $options = array('attributes' => array('badpwdcount'));
                 $result = $dbc->query($query, $options)->toArray();
                 $bpc = (isset($result[0]['badpwdcount'][0])) ? $result[0]['badpwdcount'][0] : 0;
-                if ($bpc > self::$max_login_attempts) {
+                if ($bpc > self::$maxLoginAttempts) {
                     // The user has tried to log in too many times, block them
                     throw new AccountLockoutException('The account has been locked.');
                 }
             } catch (AccountLockoutException $e) {
                 throw $e;
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 throw new AuthenticationException('Unable to login: ' . $e->getMessage());
             }
 
@@ -75,7 +77,7 @@ class LDAPUser extends User
             $this->authenticated = true;
             $this->groups = array();
             //$this->authentication_type = self::AUTH_LDAP;
-            $this->is_manager = false;
+            $this->isManager = false;
             // Try to get the user's groups
             $result = $dbc->query('(&(objectCategory=person)(sAMAccountName=' . $username . ')(cn=*))')->toArray();
             if (isset($result[0]['memberof'])) {
@@ -88,9 +90,9 @@ class LDAPUser extends User
                 }
             }
             // The user logged in successfully, reset the attempt counter
-            $this->login_attempts = 0;
+            $this->loginAttempts = 0;
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new AuthenticationException($e->getMessage());
         }
     }
@@ -98,12 +100,14 @@ class LDAPUser extends User
     /**
      * Change the password stored in the database. This is not supported for LDAP users.
      *
+     * @param DAO    $dbc
      * @param string $new_password
+     *
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
     public function updatePassword(DAO $dbc, string $new_password): bool
     {
-        throw new \Exception('This feature is not supported.');
+        throw new Exception('This feature is not supported.');
     }
 }

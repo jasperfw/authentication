@@ -1,6 +1,6 @@
 <?php
 
-namespace JasperFW\JasperAuthTest;
+namespace JasperFW\AuthenticationTest;
 
 use PHPUnit\Framework\TestCase;
 

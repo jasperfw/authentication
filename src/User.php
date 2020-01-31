@@ -1,11 +1,11 @@
 <?php
 
-namespace JasperFW\JasperAuth;
+namespace JasperFW\Authentication;
 
 use Exception;
-use JasperFW\JasperAuth\Exceptions\AccountLockoutException;
-use JasperFW\JasperAuth\Exceptions\AuthenticationException;
-use JasperFW\JasperFarm\DataAccess\DAO;
+use JasperFW\Authentication\Exceptions\AccountLockoutException;
+use JasperFW\Authentication\Exceptions\AuthenticationException;
+use JasperFW\DataInterface\DataAccess\DAO;
 
 /**
  * Class User
@@ -13,30 +13,43 @@ use JasperFW\JasperFarm\DataAccess\DAO;
  * The abstract user class represents a single user. This class can be extended by an appropriate user type class such
  * as LDAPUser or DatabaseUser, depending on the source the user credentials will be authenticated against.
  *
- * @package JasperFW\JasperAuth
+ * @package JasperFW\Authentication
+ *
+ * @property-read string username The login username of the user
+ * @property-read string id The id of the user account
+ * @property-read string name The name of the user or GUEST if they have not authenticated
+ * @property-read string errors Errors that occurred during authentication
+ * @property-read int level The level of the user
+ * @property-read array groups An array of groups the user belongs to
+ * @property-read bool isExpired True if the user account is expired and can not be logged into
  */
 abstract class User
 {
     // Parameters for passwords
     /** @var int The minimum number of characters for a password to be considered valid */
-    protected static $password_min_characters = 8;
+    protected static $passwordMinCharacters = 8;
     /** @var null|int The maximum number of characters for a password to be considered valid - set null if there is no max */
-    protected static $password_max_characters = null;
+    protected static $passwordMaxCharacters = null;
     /** @var bool True if the password must contain at least one letter */
-    protected static $password_require_letter = true;
+    protected static $passwordRequireLetter = true;
     /** @var bool True if the password must contain at least one number */
-    protected static $password_require_digit = true;
+    protected static $passwordRequireDigit = true;
     /** @var bool True if the password must contain at least one special character */
-    protected static $password_require_special = false;
+    protected static $passwordRequireSpecial = false;
     /** @var null|int The age in days before a new password must be created. Set to null if no expiration is required */
-    protected static $password_max_age = null;
+    protected static $passwordMaxAge = null;
 
     /** @var User Single reference to the User object */
     protected static $_instance;
-    protected static $max_login_attempts = 3;
+    /**
+     * @var int The number of unsuccessful login attempts before the system stops processing login attempts. This is
+     *          tied to a session variable so not the most secure but adds a buffer to the underlying authentication
+     *          method's check.
+     */
+    protected static $maxLoginAttempts = 3;
     protected static $encKey = 'superSecretEncKey';
     /** @var string The name of the session variable this object will be serialized into */
-    protected static $session_name = 'session_user';
+    protected static $sessionName = 'session_user';
 
     // User levels
     /** An unauthenticated user */
@@ -51,7 +64,7 @@ abstract class User
     /** @var string[] Array of error messages generated during the login process */
     protected $errors = [];
     /** @var int The number of times the user has attempted to log in */
-    protected $login_attempts;
+    protected $loginAttempts;
 
     // Information about the account
     protected $username;
@@ -59,14 +72,14 @@ abstract class User
     protected $userlevel;
     protected $name;
     protected $authenticated;
-    protected $authentication_method;
+    protected $authenticationMethod;
     protected $levelCode;
-    protected $is_expired;
+    protected $isExpired;
     protected $groups;
-    protected $is_manager;
+    protected $isManager;
     // Information about the user, for preventing session hijacking
-    protected $ipaddress;
-    protected $useragent;
+    protected $ipAddress;
+    protected $userAgent;
 
     /**
      * Returns a reference to the single user object. If the user object has
@@ -79,8 +92,8 @@ abstract class User
         // Check if a user object has been created
         if (!isset(static::$_instance)) {
             // Check if the object is stored in the user session
-            if (isset($_SESSION[static::$session_name])) {
-                static::$_instance = unserialize($_SESSION[static::$session_name]);
+            if (isset($_SESSION[static::$sessionName])) {
+                static::$_instance = unserialize($_SESSION[static::$sessionName]);
                 //unset($_SESSION['session_user']);
             } else {
                 $c = get_called_class();
@@ -93,24 +106,25 @@ abstract class User
     /**
      * Check that the password meets the complexity requirements.
      *
-     * @param $new_password
+     * @param $newPassword
+     *
      * @return bool
      */
-    public static function checkComplexity($new_password): bool
+    public static function checkComplexity($newPassword): bool
     {
-        if (strlen($new_password) < static::$password_min_characters) {
+        if (strlen($newPassword) < static::$passwordMinCharacters) {
             return false;
         }
-        if (static::$password_max_characters != null && strlen($new_password) > static::$password_max_characters) {
+        if (static::$passwordMaxCharacters != null && strlen($newPassword) > static::$passwordMaxCharacters) {
             return false;
         }
-        if (static::$password_require_letter && !preg_match('/[A-Za-z]/', $new_password)) {
+        if (static::$passwordRequireLetter && !preg_match('/[A-Za-z]/', $newPassword)) {
             return false;
         }
-        if (static::$password_require_digit && !preg_match('/[0-9]/', $new_password)) {
+        if (static::$passwordRequireDigit && !preg_match('/[0-9]/', $newPassword)) {
             return false;
         }
-        if (static::$password_require_special && !preg_match('/[^A-Za-z0-9]/', $new_password)) {
+        if (static::$passwordRequireSpecial && !preg_match('/[^A-Za-z0-9]/', $newPassword)) {
             return false;
         }
         return true;
@@ -144,11 +158,11 @@ abstract class User
     protected function __construct()
     {
         // Set the visitor's information
-        $this->ipaddress = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
-        $this->useragent = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
+        $this->ipAddress = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
+        $this->userAgent = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
         // Set the default information
         $this->clear();
-        $this->login_attempts = 0;
+        $this->loginAttempts = 0;
     }
 
     /**
@@ -180,7 +194,7 @@ abstract class User
      */
     public function __destruct()
     {
-        $_SESSION[static::$session_name] = serialize(self::$_instance);
+        $_SESSION[static::$sessionName] = serialize(self::$_instance);
     }
 
     /**
@@ -244,8 +258,8 @@ abstract class User
 //                return $this->authentication_type;
             case 'groups':
                 return $this->groups;
-            case 'is_expired':
-                return $this->is_expired;
+            case 'isExpired':
+                return $this->isExpired;
             default:
                 return null;
         }
@@ -272,7 +286,7 @@ abstract class User
         $this->name = null;
         $this->authenticated = false;
         $this->groups = array();
-        $this->is_manager = false;
+        $this->isManager = false;
     }
 
     /**
