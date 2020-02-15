@@ -184,13 +184,14 @@ SQL;
     /**
      * Saves a new password for the user.
      *
-     * @param DAO $dbc The database connection
+     * @param DAO    $dbc          The database connection
      * @param string $new_password The new password to be set
      *
      * @return bool True if the password change is successful
      * @throws AuthenticationException
      * @throws \Exception
-     * @noinspection SqlNoDataSourceInspection*/
+     * @noinspection SqlNoDataSourceInspection
+     */
     public function updatePassword(DAO $dbc, string $new_password): bool
     {
         // Check that the password does not match the current password
