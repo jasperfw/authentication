@@ -2,10 +2,9 @@
 
 namespace JasperFW\Authentication;
 
-use Exception;
 use JasperFW\Authentication\Exceptions\AccountLockoutException;
 use JasperFW\Authentication\Exceptions\AuthenticationException;
-use JasperFW\DataInterface\DataAccess\DAO;
+use JasperFW\DataAccess\DAO;
 
 /**
  * Class User
@@ -298,7 +297,6 @@ abstract class User
      * @return bool True if the user authenticated
      * @throws AccountLockoutException
      * @throws AuthenticationException
-     * @throws Exception
      */
     abstract public function authenticate(DAO $dbc, string $username, string $password): bool;
 

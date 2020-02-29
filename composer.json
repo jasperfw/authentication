@@ -8,6 +8,7 @@
       "homepage": "http://wigedev.net"
     }
   ],
+  "minimum-stability": "dev",
   "require": {
     "php": ">=7.2",
     "psr/log": "1.0.*",

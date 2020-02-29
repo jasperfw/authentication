@@ -2,9 +2,11 @@
 
 namespace JasperFW\Authentication\Type;
 
+use Exception;
+use JasperFW\Authentication\Exceptions\AccountLockoutException;
 use JasperFW\Authentication\Exceptions\AuthenticationException;
 use JasperFW\Authentication\User;
-use JasperFW\DataInterface\DataAccess\DAO;
+use JasperFW\DataAccess\DAO;
 
 /**
  * Class DatabaseUser
@@ -33,6 +35,7 @@ class DatabaseUser extends User
      *
      * @return bool True if the user successfully authenticates
      * @throws AuthenticationException
+     * @throws AccountLockoutException
      */
     public function authenticate(DAO $dbc, string $username, string $password): bool
     {
@@ -41,15 +44,17 @@ class DatabaseUser extends User
 
         // Verify the hash
         $valid_password = false;
-        if (false !== $info) {
-            $valid_password = $this->validatePassword($password, $info);
+        if (!empty($info)) {
+            $valid_password = $this->validatePassword($password, $info['hash']);
         }
-
         if (false == $valid_password) {
             $this->badPassword('The username or password provided was not valid.');
-            return false;
+            throw new AuthenticationException('The username or password provided is not valid.');
         }
-
+        // Check the expiration
+        if ($this->isExpired($info['expiration'])) {
+            throw new AccountLockoutException('This account is locked.');
+        }
         // If execution gets here, the user authenticated, load their information
         session_regenerate_id();
         $this->authenticated = true;
@@ -67,7 +72,6 @@ class DatabaseUser extends User
      *
      * @return bool True if the user is authenticated
      * @throws AuthenticationException
-     * @noinspection SqlNoDataSourceInspection
      */
     public function authenticateWithToken(DAO $dbc, string $token, string $username): bool
     {
@@ -115,7 +119,6 @@ SQL;
      * @param bool   $disable_login True to disable the password - after this, login will only be possible with the token
      *
      * @return string|null
-     * @noinspection SqlNoDataSourceInspection
      */
     public static function setResetToken(DAO $dbc, string $email_address, string $username, int $token_lifespan_minutes = 180, bool $disable_login = false): ?string
     {
@@ -169,7 +172,6 @@ SQL;
      * @param string $token The token to check
      *
      * @return bool True if the token is not already in use
-     * @noinspection SqlNoDataSourceInspection
      */
     protected static function isTokenUnique(DAO $dbc, string $token): bool
     {
@@ -189,8 +191,7 @@ SQL;
      *
      * @return bool True if the password change is successful
      * @throws AuthenticationException
-     * @throws \Exception
-     * @noinspection SqlNoDataSourceInspection
+     * @throws Exception
      */
     public function updatePassword(DAO $dbc, string $new_password): bool
     {
@@ -249,11 +250,11 @@ SQL;
      * Get the hashed password from the database.
      *
      * @param DAO $dbc
-     * @param $username
+     * @param     $username
      *
      * @return string
-     * @noinspection SqlNoDataSourceInspection*/
-    protected function getUserRecord(DAO $dbc, string $username): string
+     */
+    protected function getUserRecord(DAO $dbc, string $username): array
     {
         $authentication_table = static::$authenticationTable;
         $password_column = static::$passwordColumn;
@@ -285,6 +286,9 @@ MSSQL;
      */
     protected function validatePassword(string $password, string $hash): bool
     {
+        if (empty($password)) {
+            return false;
+        }
         return password_verify($password, $hash);
     }
 
@@ -294,7 +298,6 @@ MSSQL;
      */
     protected function populateUserInfo(DAO $dbc): void
     {
-
     }
 
     /**

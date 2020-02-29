@@ -6,7 +6,7 @@ use Exception;
 use JasperFW\Authentication\Exceptions\AccountLockoutException;
 use JasperFW\Authentication\Exceptions\AuthenticationException;
 use JasperFW\Authentication\User;
-use JasperFW\DataInterface\DataAccess\DAO;
+use JasperFW\DataAccess\DAO;
 
 /**
  * Class LDAPUser
@@ -92,6 +92,10 @@ class LDAPUser extends User
             // The user logged in successfully, reset the attempt counter
             $this->loginAttempts = 0;
             return true;
+        } catch (AuthenticationException $exception) {
+            throw $exception;
+        } catch (AccountLockoutException $exception) {
+            throw $exception;
         } catch (Exception $e) {
             throw new AuthenticationException($e->getMessage());
         }
