@@ -19,14 +19,14 @@ use JasperFW\DataAccess\DAO;
  */
 class DatabaseUser extends User
 {
-    protected static $authenticationTable = '';
-    protected static $userIDColumn = '';
-    protected static $usernameColumn = '';
-    protected static $passwordColumn = '';
-    protected static $emailColumn = '';
-    protected static $expirationColumn = '';
-    protected static $resetTokenColumn = '';
-    protected static $resetTokenExpirationColumn = '';
+    protected static string $authenticationTable = '';
+    protected static string $userIDColumn = '';
+    protected static string $usernameColumn = '';
+    protected static string $passwordColumn = '';
+    protected static string $emailColumn = '';
+    protected static string $expirationColumn = '';
+    protected static string $resetTokenColumn = '';
+    protected static string $resetTokenExpirationColumn = '';
 
     /**
      * @param string $username The username being authenticated
@@ -154,11 +154,11 @@ SQL;
         }
         //TODO: Move this to its own function
         $query = <<<SQL
-UPDATE {$authentication_table} 
-SET {$reset_token_column} = :token, 
-{$reset_token_expiration_column} = :expiration
-{$clear_sql} 
-WHERE {$userid_column} = :userid
+UPDATE {$authentication_table}
+SET {$reset_token_column} = :token, 
+{$reset_token_expiration_column} = :expiration
+{$clear_sql} 
+WHERE {$userid_column} = :userid
 SQL;
         $params = array(':userid' => $userid, ':token' => $token, ':expiration' => $token_expiration);
         $dbc->query($query, ['params' => $params]);

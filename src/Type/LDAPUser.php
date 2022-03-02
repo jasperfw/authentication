@@ -83,7 +83,7 @@ class LDAPUser extends User
             if (isset($result[0]['memberof'])) {
                 unset ($result[0]['memberof']['count']);
                 foreach ($result[0]['memberof'] as $groupstring) {
-                    if (strpos($groupstring, 'OU=Medici Employees') !== false) {
+                    if (str_contains($groupstring, 'OU=Medici Employees')) {
                         // Only get the groups that are part of Medici Employees
                         $this->groups[] = substr($groupstring, 3, strpos($groupstring, ',') - 3);
                     }
@@ -92,9 +92,7 @@ class LDAPUser extends User
             // The user logged in successfully, reset the attempt counter
             $this->loginAttempts = 0;
             return true;
-        } catch (AuthenticationException $exception) {
-            throw $exception;
-        } catch (AccountLockoutException $exception) {
+        } catch (AuthenticationException|AccountLockoutException $exception) {
             throw $exception;
         } catch (Exception $e) {
             throw new AuthenticationException($e->getMessage());
