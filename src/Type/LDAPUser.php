@@ -18,21 +18,26 @@ use JasperFW\DataAccess\DAO;
 class LDAPUser extends User
 {
     /**
-     * @param DAO $dbc The database connection to authenticate against
-     * @param string $username The username to authenticate
-     * @param string $password The password to authenticate
+     * @param DAO    $dbc      The database connection containing the authentication database
+     * @param string $username The username being authenticated
+     * @param string $password The password being authenticated
+     * @param array  $options  Optional arguments
      *
-     * @return bool
-     * @throws AccountLockoutException
+     * @return bool True if the user successfully authenticates
      * @throws AuthenticationException
+     * @throws AccountLockoutException
      * @noinspection PhpComposerExtensionStubsInspection
      */
-    public function authenticate(DAO $dbc, string $username, string $password): bool
+    public function authenticate(DAO $dbc, string $username, string $password, array $options = []): bool
     {
+        if (!isset($options['domain'])) {
+            throw new AuthenticationException('An LDAP domain must be specified.');
+        }
+        $ldap_domain = $options['domain'];
         $username = ldap_escape($username);
         $password = ldap_escape($password);
         try {
-            $username = str_replace('@'.$this->ldap_domain, '', $username);
+            $username = str_replace('@' . $ldap_domain, '', $username);
             // Check how many times the user has attempted to log in
             try {
                 //TODO: Move this to its own function
@@ -55,7 +60,7 @@ class LDAPUser extends User
                 // Make sure the username is not blank, because apparently ldap allows that
                 $success = false;
             } else {
-                $success = @ldap_bind($dbc->getHandle(), $username . '@' . $this->ldap_domain, $password);
+                $success = @ldap_bind($dbc->getHandle(), $username . '@' . $ldap_domain, $password);
                 if (!$success) {
                     if (ldap_errno($dbc->getHandle()) == '49') {
                         throw new AuthenticationException('The username/password combination was not valid.');

@@ -290,16 +290,16 @@ abstract class User
     }
 
     /**
-     * Attempt authentication against the database or service.
-     * @param string $username The username
-     * @param string $password
-     * @param DAO $dbc The database connection
+     * @param DAO    $dbc      The database connection containing the authentication database
+     * @param string $username The username being authenticated
+     * @param string $password The password being authenticated
+     * @param array  $options  Optional arguments
      *
-     * @return bool True if the user authenticated
-     * @throws AccountLockoutException
+     * @return bool True if the user successfully authenticates
      * @throws AuthenticationException
+     * @throws AccountLockoutException
      */
-    abstract public function authenticate(DAO $dbc, string $username, string $password): bool;
+    abstract public function authenticate(DAO $dbc, string $username, string $password, array $options = []): bool;
 
     /**
      * Check if the user has successfully authenticated.

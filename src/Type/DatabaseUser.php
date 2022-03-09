@@ -29,15 +29,16 @@ class DatabaseUser extends User
     protected static string $resetTokenExpirationColumn = '';
 
     /**
+     * @param DAO    $dbc      The database connection containing the authentication database
      * @param string $username The username being authenticated
      * @param string $password The password being authenticated
-     * @param DAO    $dbc      The database connection containing the authentication database
+     * @param array  $options  Optional arguments
      *
      * @return bool True if the user successfully authenticates
      * @throws AuthenticationException
      * @throws AccountLockoutException
      */
-    public function authenticate(DAO $dbc, string $username, string $password): bool
+    public function authenticate(DAO $dbc, string $username, string $password, array $options = []): bool
     {
         // Get the password hash from the database
         $info = $this->getUserRecord($dbc, $username);
