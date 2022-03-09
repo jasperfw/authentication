@@ -5,6 +5,7 @@ namespace JasperFW\Authentication;
 use JasperFW\Authentication\Exceptions\AccountLockoutException;
 use JasperFW\Authentication\Exceptions\AuthenticationException;
 use JasperFW\DataAccess\DAO;
+use JetBrains\PhpStorm\Pure;
 
 /**
  * Class User
@@ -26,29 +27,29 @@ abstract class User
 {
     // Parameters for passwords
     /** @var int The minimum number of characters for a password to be considered valid */
-    protected static $passwordMinCharacters = 8;
+    protected static int $passwordMinCharacters = 8;
     /** @var null|int The maximum number of characters for a password to be considered valid - set null if there is no max */
-    protected static $passwordMaxCharacters = null;
+    protected static ?int $passwordMaxCharacters = null;
     /** @var bool True if the password must contain at least one letter */
-    protected static $passwordRequireLetter = true;
+    protected static bool $passwordRequireLetter = true;
     /** @var bool True if the password must contain at least one number */
-    protected static $passwordRequireDigit = true;
+    protected static bool $passwordRequireDigit = true;
     /** @var bool True if the password must contain at least one special character */
-    protected static $passwordRequireSpecial = false;
+    protected static bool $passwordRequireSpecial = false;
     /** @var null|int The age in days before a new password must be created. Set to null if no expiration is required */
-    protected static $passwordMaxAge = null;
+    protected static ?int $passwordMaxAge = null;
 
     /** @var User Single reference to the User object */
-    protected static $_instance;
+    protected static User $_instance;
     /**
      * @var int The number of unsuccessful login attempts before the system stops processing login attempts. This is
      *          tied to a session variable so not the most secure but adds a buffer to the underlying authentication
      *          method's check.
      */
-    protected static $maxLoginAttempts = 3;
-    protected static $encKey = 'superSecretEncKey';
+    protected static int $maxLoginAttempts = 3;
+    protected static string $encKey = 'superSecretEncKey';
     /** @var string The name of the session variable this object will be serialized into */
-    protected static $sessionName = 'session_user';
+    protected static string $sessionName = 'session_user';
 
     // User levels
     /** An unauthenticated user */
@@ -61,24 +62,24 @@ abstract class User
     const ADMINISTRATOR = 3;
 
     /** @var string[] Array of error messages generated during the login process */
-    protected $errors = [];
+    protected array $errors = [];
     /** @var int The number of times the user has attempted to log in */
-    protected $loginAttempts;
+    protected int $loginAttempts;
 
     // Information about the account
-    protected $username;
-    protected $userid;
-    protected $userlevel;
-    protected $name;
-    protected $authenticated;
-    protected $authenticationMethod;
-    protected $levelCode;
-    protected $isExpired;
-    protected $groups;
-    protected $isManager;
+    protected ?string $username;
+    protected ?int $userid;
+    protected ?int $userlevel;
+    protected ?string $name;
+    protected ?bool $authenticated;
+    protected ?string $authenticationMethod;
+    protected int $levelCode;
+    protected ?bool $isExpired;
+    protected array $groups;
+    protected ?bool $isManager;
     // Information about the user, for preventing session hijacking
-    protected $ipAddress;
-    protected $userAgent;
+    protected mixed $ipAddress;
+    protected mixed $userAgent;
 
     /**
      * Returns a reference to the single user object. If the user object has
@@ -157,8 +158,8 @@ abstract class User
     protected function __construct()
     {
         // Set the visitor's information
-        $this->ipAddress = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
-        $this->userAgent = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
+        $this->ipAddress = $_SERVER['REMOTE_ADDR'] ?? '';
+        $this->userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
         // Set the default information
         $this->clear();
         $this->loginAttempts = 0;
@@ -200,14 +201,15 @@ abstract class User
      * Prevent information leak by overriding the default __toString and simply return the username.
      * @return string The username
      */
-    public function __toString(): string
+    #[Pure] public function __toString(): string
     {
         return $this->getUsername();
     }
 
     /**
      * Get the username.
-     * @return string The username
+     *
+     * @return string|null The username
      */
     public function getUsername(): ?string
     {
@@ -223,9 +225,8 @@ abstract class User
      *
      * @return void
      */
-    public function __set($index, $value): void
+    public function __set(string $index, mixed $value): void
     {
-        return;
     }
 
     /**
@@ -233,9 +234,9 @@ abstract class User
      *
      * @param string $index The name of the variable to be retrieved
      *
-     * @return mixed The value associated with the index
+     * @return string|array|bool|null The value associated with the index
      */
-    public function __get($index)
+    public function __get(string $index): string|array|bool|null
     {
         // Determine which value to return
         switch ($index) {
@@ -323,11 +324,11 @@ abstract class User
     /**
      * Function checks if the user is in the specified group.
      *
-     * @param  array|string $group The id of the group or groups to check
+     * @param array|string $group The id of the group or groups to check
      *
      * @return boolean True if the user is in the specified group, false otherwise.
      */
-    public function inGroup($group)
+    public function inGroup(array|string $group): bool
     {
         // If a string is given, convert to array
         if (!is_array($group)) {

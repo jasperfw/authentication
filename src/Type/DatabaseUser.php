@@ -82,16 +82,16 @@ class DatabaseUser extends User
         $reset_token_expiration_column = static::$resetTokenExpirationColumn;
         $params = array(':token' => $token);
         $username_sql = '';
-        if (false !== $username) {
-            $username_sql = "{$username_column} = :username AND ";
+        if ('' !== $username) {
+            $username_sql = "$username_column = :username AND ";
             $params['username'] = $username;
         }
 
         //TODO: Move this to its own function so that it can be overridden
         $query = <<<SQL
-SELECT {$userid_column} userid, {$username_column} username, {$reset_token_column} token, {$reset_token_expiration_column} tokenexp
-  FROM {$authentication_table}
- WHERE {$username_sql}{$reset_token_column} = :token AND {$reset_token_expiration_column} > GETDATE()
+SELECT $userid_column userid, $username_column username, $reset_token_column token, $reset_token_expiration_column tokenexp
+  FROM $authentication_table
+ WHERE $username_sql $reset_token_column = :token AND $reset_token_expiration_column > GETDATE()
 SQL;
 
         $result = $dbc->query($query, ['params' => $params])->toArray();
@@ -132,12 +132,12 @@ SQL;
         $reset_token_expiration_column = static::$resetTokenExpirationColumn;
         $params = array(':email' => $email_address);
         $username_sql = '';
-        if ($username !== false) {
-            $username_sql = "{$username_column} = :username AND ";
+        if ($username !== '') {
+            $username_sql = "$username_column = :username AND ";
             $params[':username'] = $username;
         }
         // TODO: Move this to its own function
-        $query = "SELECT {$userid_column} userid FROM {$authentication_table} WHERE {$username_sql}{$email_column} = :email";
+        $query = "SELECT $userid_column userid FROM $authentication_table WHERE $username_sql $email_column = :email";
         $result = $dbc->query($query, ['params' => $params])->toArray();
         if (count($result) < 1) {
             return false;
@@ -150,15 +150,15 @@ SQL;
         $token_expiration = date('Y-m-d H:i:s', strtotime('+' . $token_lifespan_minutes . ' minutes'));
         $clear_sql = '';
         if ($disable_login) {
-            $clear_sql = ", {$password_column} = NULL, {$expiration_column} = NULL";
+            $clear_sql = ", $password_column = NULL, $expiration_column = NULL";
         }
         //TODO: Move this to its own function
         $query = <<<SQL
-UPDATE {$authentication_table}
-SET {$reset_token_column} = :token, 
-{$reset_token_expiration_column} = :expiration
-{$clear_sql} 
-WHERE {$userid_column} = :userid
+UPDATE $authentication_table
+SET $reset_token_column = :token, 
+$reset_token_expiration_column = :expiration
+$clear_sql 
+WHERE $userid_column = :userid
 SQL;
         $params = array(':userid' => $userid, ':token' => $token, ':expiration' => $token_expiration);
         $dbc->query($query, ['params' => $params]);
@@ -177,7 +177,7 @@ SQL;
     {
         $authentication_table = static::$authenticationTable;
         $reset_token_column = static::$resetTokenColumn;
-        $query = "SELECT COUNT(*) thenum FROM {$authentication_table} WHERE {$reset_token_column} = :token";
+        $query = "SELECT COUNT(*) thenum FROM $authentication_table WHERE $reset_token_column = :token";
         $result = $dbc->query($query, ['params' => [':token' => $token]])->toArray();
         if (count($result) > 0 && $result[0]['thenum'] < 1) return true;
         return false;
@@ -196,8 +196,8 @@ SQL;
     public function updatePassword(DAO $dbc, string $new_password): bool
     {
         // Check that the password does not match the current password
-        $info = $this->getUserRecord($dbc, $this->username);
-        if (false === $info) {
+        $info = $this->getUserRecord($dbc, $this->username)['hash'];
+        if (null === $info) {
             throw new AuthenticationException('You are not authorized to change this password.');
         }
         if ($this->validatePassword($new_password, $info)) {
@@ -220,17 +220,17 @@ SQL;
         // If a max age for the password has been specified, set the expiration
         $expiration_sql = '';
         if (null !== static::$passwordMaxAge) {
-            $expiration_sql = "{$expiration_column} = :exp,";
+            $expiration_sql = "$expiration_column = :exp,";
             $params[':exp'] = date('Y-m-d H:i:s', strtotime('+' . static::$passwordMaxAge . ' days'));
         }
         // Save the password
         $sql = <<<SQL
-UPDATE {$authentication_table}
-   SET {$password_column} = :pass,
-       {$expiration_sql}
-       {$reset_token_column} = NULL,
-       {$reset_token_expiration_column} = NULL 
- WHERE {$userid_column} = :user
+UPDATE $authentication_table
+   SET $password_column = :pass,
+       $expiration_sql
+       $reset_token_column = NULL,
+       $reset_token_expiration_column = NULL 
+ WHERE $userid_column = :user
 SQL;
         $dbc->query($sql, ['params' => $params]);
         return true;
@@ -249,12 +249,12 @@ SQL;
     /**
      * Get the hashed password from the database.
      *
-     * @param DAO $dbc
-     * @param     $username
+     * @param DAO    $dbc
+     * @param string $username
      *
-     * @return string
+     * @return array|null
      */
-    protected function getUserRecord(DAO $dbc, string $username): array
+    protected function getUserRecord(DAO $dbc, string $username): ?array
     {
         $authentication_table = static::$authenticationTable;
         $password_column = static::$passwordColumn;
@@ -263,16 +263,16 @@ SQL;
         $userid_column = static::$userIDColumn;
 
         $sql = <<<MSSQL
-SELECT {$userid_column} userid,
-       {$password_column} hash,
-       {$expiration_column} exp
-  FROM {$authentication_table}
- WHERE {$username_column} = :username
+SELECT $userid_column userid,
+       $password_column hash,
+       $expiration_column exp
+  FROM $authentication_table
+ WHERE $username_column = :username
 MSSQL;
         $params = array(':username' => $username);
         $result = $dbc->query($sql, ['params' => $params])->toArray();
         if (0 == count($result)) {
-            return false;
+            return null;
         }
         return $result[0];
     }

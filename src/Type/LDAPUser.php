@@ -83,10 +83,7 @@ class LDAPUser extends User
             if (isset($result[0]['memberof'])) {
                 unset ($result[0]['memberof']['count']);
                 foreach ($result[0]['memberof'] as $groupstring) {
-                    if (str_contains($groupstring, 'OU=Medici Employees')) {
-                        // Only get the groups that are part of Medici Employees
-                        $this->groups[] = substr($groupstring, 3, strpos($groupstring, ',') - 3);
-                    }
+                    $this->groups[] = substr($groupstring, 3, strpos($groupstring, ',') - 3);
                 }
             }
             // The user logged in successfully, reset the attempt counter
