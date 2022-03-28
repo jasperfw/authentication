@@ -51,16 +51,6 @@ abstract class User
     /** @var string The name of the session variable this object will be serialized into */
     protected static string $sessionName = 'session_user';
 
-    // User levels
-    /** An unauthenticated user */
-    const GUEST = 0;
-    /** An authenticated user */
-    const USER = 1;
-    /** An authenticated user who works for Medici */
-    const STAFF = 2;
-    /** An authenticated user who is an admin at Medici */
-    const ADMINISTRATOR = 3;
-
     /** @var string[] Array of error messages generated during the login process */
     protected array $errors = [];
     /** @var int The number of times the user has attempted to log in */
@@ -69,14 +59,11 @@ abstract class User
     // Information about the account
     protected ?string $username;
     protected ?int $userid;
-    protected ?int $userlevel;
     protected ?string $name;
     protected ?bool $authenticated;
     protected ?string $authenticationMethod;
-    protected int $levelCode;
     protected ?bool $isExpired;
     protected array $groups;
-    protected ?bool $isManager;
     // Information about the user, for preventing session hijacking
     protected mixed $ipAddress;
     protected mixed $userAgent;
@@ -281,12 +268,9 @@ abstract class User
         // Set the default information
         $this->username = null;
         $this->userid = null;
-        $this->userlevel = 'guest';
-        $this->levelCode = self::GUEST;
         $this->name = null;
         $this->authenticated = false;
         $this->groups = array();
-        $this->isManager = false;
     }
 
     /**

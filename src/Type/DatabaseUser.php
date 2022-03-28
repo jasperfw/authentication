@@ -104,7 +104,6 @@ SQL;
         $this->authenticated = true;
         $this->userid = $result['userid'];
         $this->username = $result['username'];
-        $this->levelCode = static::USER;
         $this->isExpired = true;
         $this->populateUserInfo($dbc);
         return true;

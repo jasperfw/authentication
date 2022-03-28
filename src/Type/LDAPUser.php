@@ -76,13 +76,10 @@ class LDAPUser extends User
             // The user is authenticated
             $this->username = $username;
             $this->userid = null;
-            $this->userlevel = 'ldap';
-            $this->levelCode = self::STAFF;
             $this->name = '';
             $this->authenticated = true;
             $this->groups = array();
             //$this->authentication_type = self::AUTH_LDAP;
-            $this->isManager = false;
             // Try to get the user's groups
             $result = $dbc->query('(&(objectCategory=person)(sAMAccountName=' . $username . ')(cn=*))')->toArray();
             if (isset($result[0]['memberof'])) {
